@@ -41,8 +41,8 @@ fromString latS lngS =
 initialState :: State
 initialState =
   let
-    lat = "35"
-    lng = "135"
+    lat = "35.0"
+    lng = "135.0"
   in
     { lat
     , lng
@@ -67,7 +67,7 @@ render self =
         [ element
             leafletMap
             { center: fromMaybe [35.0, 135.0] self.state.position
-            , zoom: 8
+            , zoom: 10
             , children:
               [ element
                   leafletTileLayer
@@ -89,6 +89,8 @@ render self =
                   self
                   targetValue
                   (\value -> ChangeLat (fromMaybe "" value))
+            , step: "0.1"
+            , "type": "number"
             , value: self.state.lat
             }
           ]
@@ -100,6 +102,8 @@ render self =
                   self
                   targetValue
                   (\value -> ChangeLng (fromMaybe "" value))
+            , step: "0.1"
+            , "type": "number"
             , value: self.state.lng
             }
           ]
@@ -116,7 +120,9 @@ render self =
 
 update :: Self Props State Action -> Action -> StateUpdate Props State Action
 update self Noop = NoUpdate
-update self (ChangeLat v) = Update self.state { lat = v }
-update self (ChangeLng v) = Update self.state { lng = v }
+update self@{ state: { lng } } (ChangeLat v) =
+  Update self.state { lat = v, position = fromString v lng }
+update self@{ state: { lat } } (ChangeLng v) =
+  Update self.state { lng = v, position = fromString lat v }
 update self OK =
   Update self.state { position = fromString self.state.lat self.state.lng }
