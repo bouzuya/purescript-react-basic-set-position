@@ -71,7 +71,8 @@ render self =
             , children:
               [ element
                   leafletTileLayer
-                  { url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  { attribution: "&copy; <a href=\"http://osm.org/copyright\">OpenStreetMap</a> contributors"
+                  , url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   }
               ] <>
                 case self.state.position of
