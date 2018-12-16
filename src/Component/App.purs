@@ -2,11 +2,12 @@ module Component.App
   ( app
   ) where
 
-import Prelude
-
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import React.Basic (Component, JSX, ReactComponent, Self, StateUpdate(..), createComponent, element, make)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Number as Number
+import Prelude ((<$>), (<*>), (<>))
+import React.Basic (Component, JSX, ReactComponent, Self, StateUpdate(..), capture, capture_, createComponent, element, make)
 import React.Basic.DOM as H
+import React.Basic.DOM.Events (targetValue)
 
 foreign import leafletMap :: forall props. ReactComponent { | props }
 foreign import leafletMarker :: forall props. ReactComponent { | props }
@@ -23,6 +24,9 @@ type State =
 
 data Action
   = Noop
+  | ChangeLat String
+  | ChangeLng String
+  | OK
 
 component :: Component Props
 component = createComponent "App"
@@ -30,12 +34,20 @@ component = createComponent "App"
 app :: JSX
 app = make component { initialState, render, update } {}
 
+fromString :: String -> String -> Maybe (Array Number)
+fromString latS lngS =
+  (\lat lng -> [lat, lng]) <$> Number.fromString latS <*> Number.fromString lngS
+
 initialState :: State
 initialState =
-  { lat: "35"
-  , lng: "135"
-  , position: Nothing
-  }
+  let
+    lat = "35"
+    lng = "135"
+  in
+    { lat
+    , lng
+    , position: fromString lat lng
+    }
 
 render :: Self Props State Action -> JSX
 render self =
@@ -55,7 +67,7 @@ render self =
         [ element
             leafletMap
             { center: fromMaybe [35.0, 135.0] self.state.position
-            , zoom: 10
+            , zoom: 8
             , children:
               [ element
                   leafletTileLayer
@@ -71,17 +83,28 @@ render self =
         , H.label_
           [ H.span_ [ H.text "latitude" ]
           , H.input
-            { value: self.state.lat
+            { onChange:
+                capture
+                  self
+                  targetValue
+                  (\value -> ChangeLat (fromMaybe "" value))
+            , value: self.state.lat
             }
           ]
         , H.label_
           [ H.span_ [ H.text "longitude" ]
           , H.input
-            { value: self.state.lng
+            { onChange:
+                capture
+                  self
+                  targetValue
+                  (\value -> ChangeLng (fromMaybe "" value))
+            , value: self.state.lng
             }
           ]
         , H.button
-          { children: [ H.text "OK" ]
+          { onClick: capture_ self OK
+          , children: [ H.text "OK" ]
           }
         ]
       }
@@ -92,3 +115,7 @@ render self =
 
 update :: Self Props State Action -> Action -> StateUpdate Props State Action
 update self Noop = NoUpdate
+update self (ChangeLat v) = Update self.state { lat = v }
+update self (ChangeLng v) = Update self.state { lng = v }
+update self OK =
+  Update self.state { position = fromString self.state.lat self.state.lng }
