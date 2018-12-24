@@ -78,7 +78,11 @@ render self =
                 case self.state.position of
                   Nothing -> []
                   Just position ->
-                    [ element leafletMarker { position }
+                    [ element
+                        leafletMarker
+                        { draggable: true
+                        , position
+                        }
                     ]
             }
         , H.label_
