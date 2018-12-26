@@ -5,13 +5,19 @@ module Component.App
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number as Number
 import Prelude ((<$>), (<*>), (<>))
-import React.Basic (Component, JSX, ReactComponent, Self, StateUpdate(..), capture, capture_, createComponent, element, make)
+import React.Basic (Component, JSX, ReactComponent, Self, StateUpdate(..), capture, capture_, createComponent, element, make, monitor)
 import React.Basic.DOM as H
 import React.Basic.DOM.Events (targetValue)
+import React.Basic.Events (EventFn, SyntheticEvent, unsafeEventFn)
+import Unsafe.Coerce (unsafeCoerce)
 
 foreign import leafletMap :: forall props. ReactComponent { | props }
 foreign import leafletMarker :: forall props. ReactComponent { | props }
 foreign import leafletTileLayer :: forall props. ReactComponent { | props }
+foreign import myMarker :: forall props. ReactComponent { | props }
+
+leafletElementLatLng :: EventFn SyntheticEvent { lat :: Number, lng :: Number }
+leafletElementLatLng = unsafeEventFn \e -> unsafeCoerce e
 
 type Props =
   {}
@@ -27,6 +33,7 @@ data Action
   | ChangeLat String
   | ChangeLng String
   | OK
+  | SetMarker { lat :: Number, lng :: Number }
 
 component :: Component Props
 component = createComponent "App"
@@ -79,8 +86,13 @@ render self =
                   Nothing -> []
                   Just position ->
                     [ element
-                        leafletMarker
+                        myMarker
                         { draggable: true
+                        , onDragEnd:
+                            monitor
+                              self
+                              leafletElementLatLng
+                              SetMarker
                         , position
                         }
                     ]
@@ -130,3 +142,5 @@ update self@{ state: { lat } } (ChangeLng v) =
   Update self.state { lng = v, position = fromString lat v }
 update self OK =
   Update self.state { position = fromString self.state.lat self.state.lng }
+update self (SetMarker { lat, lng }) =
+  Update self.state { position = Just [lat, lng] }
