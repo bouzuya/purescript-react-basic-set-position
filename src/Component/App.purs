@@ -14,10 +14,14 @@ import Unsafe.Coerce (unsafeCoerce)
 foreign import leafletMap :: forall props. ReactComponent { | props }
 foreign import leafletMarker :: forall props. ReactComponent { | props }
 foreign import leafletTileLayer :: forall props. ReactComponent { | props }
+foreign import myMap :: forall props. ReactComponent { | props }
 foreign import myMarker :: forall props. ReactComponent { | props }
 
 leafletElementLatLng :: EventFn SyntheticEvent { lat :: Number, lng :: Number }
 leafletElementLatLng = unsafeEventFn \e -> unsafeCoerce e
+
+leafletElementZoom :: EventFn SyntheticEvent Number
+leafletElementZoom = unsafeEventFn \e -> unsafeCoerce e
 
 type Props =
   {}
@@ -26,6 +30,7 @@ type State =
   { lat :: String
   , lng :: String
   , position :: Maybe (Array Number)
+  , zoom :: Number
   }
 
 data Action
@@ -34,6 +39,7 @@ data Action
   | ChangeLng String
   | OK
   | SetMarker { lat :: Number, lng :: Number }
+  | SetZoom Number
 
 component :: Component Props
 component = createComponent "App"
@@ -54,6 +60,7 @@ initialState =
     { lat
     , lng
     , position: fromString lat lng
+    , zoom: 10.0
     }
 
 render :: Self Props State Action -> JSX
@@ -72,9 +79,14 @@ render self =
       { className: "body"
       , children:
         [ element
-            leafletMap
+            myMap
             { center: fromMaybe [35.0, 135.0] self.state.position
-            , zoom: 10
+            , zoom: self.state.zoom
+            , onZoom:
+                monitor
+                  self
+                  leafletElementZoom
+                  SetZoom
             , children:
               [ element
                   leafletTileLayer
@@ -144,3 +156,5 @@ update self OK =
   Update self.state { position = fromString self.state.lat self.state.lng }
 update self (SetMarker { lat, lng }) =
   Update self.state { position = Just [lat, lng] }
+update self (SetZoom zoom) =
+  Update self.state { zoom = zoom }
