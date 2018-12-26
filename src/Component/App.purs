@@ -72,7 +72,7 @@ render self =
       { className: "header"
       , children:
         [ H.h1_
-          [ H.text "App" ]
+          [ H.text "set-position" ]
         ]
       }
     , H.div
